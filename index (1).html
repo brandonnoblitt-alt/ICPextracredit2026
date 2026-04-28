@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYNTAX BLASTER — ICP Vocab Quiz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+  :root {
+    --bg: #0a0a1a;
+    --panel: #0f0f2e;
+    --border: #00ffcc;
+    --accent: #ff2d78;
+    --yellow: #ffe600;
+    --text: #e0e0ff;
+    --dim: #4a4a8a;
+    --correct: #00ff88;
+    --wrong: #ff2d78;
+    --glow: 0 0 8px #00ffcc, 0 0 20px #00ffcc44;
+    --glow-pink: 0 0 8px #ff2d78, 0 0 20px #ff2d7844;
+    --glow-yellow: 0 0 8px #ffe600, 0 0 20px #ffe60044;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, #ffffff44, transparent),
+      radial-gradient(1px 1px at 30% 80%, #ffffff33, transparent),
+      radial-gradient(1px 1px at 60% 15%, #ffffff55, transparent),
+      radial-gradient(1px 1px at 80% 55%, #ffffff44, transparent),
+      radial-gradient(1px 1px at 45% 65%, #ffffff33, transparent),
+      radial-gradient(1px 1px at 90% 90%, #ffffff22, transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header { text-align: center; padding: 32px 20px 10px; position: relative; z-index: 1; }
+
+  .game-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(18px, 4vw, 32px);
+    color: var(--border);
+    text-shadow: var(--glow);
+    letter-spacing: 2px;
+    animation: flicker 4s infinite;
+    line-height: 1.5;
+  }
+
+  .subtitle { color: var(--yellow); font-size: 20px; margin-top: 6px; letter-spacing: 3px; }
+  .creator { color: var(--dim); font-size: 16px; margin-top: 4px; letter-spacing: 2px; }
+
+  @keyframes flicker {
+    0%, 95%, 100% { opacity: 1; }
+    96% { opacity: 0.6; }
+    97% { opacity: 1; }
+    98% { opacity: 0.4; }
+    99% { opacity: 1; }
+  }
+
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: min(720px, 96vw);
+    margin: 16px auto 8px;
+    padding: 10px 18px;
+    border: 2px solid var(--dim);
+    background: var(--panel);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    position: relative;
+    z-index: 1;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hud-score { color: var(--yellow); }
+  .hud-streak { color: #ff9900; min-width: 80px; }
+  .hud-lives { color: var(--accent); }
+  .hud-q { color: var(--border); }
+
+  .mute-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--dim);
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .mute-btn:hover, .mute-btn.active { border-color: var(--border); color: var(--border); }
+  .mute-btn.muted { border-color: var(--accent); color: var(--accent); }
+
+  .powerup-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 4px 8px;
+    background: rgba(255,153,0,0.1);
+    border: 1px solid #ff9900;
+    color: #ff9900;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+    animation: pulse-pu 2s ease-in-out infinite;
+  }
+  .powerup-btn:hover { background: rgba(255,153,0,0.25); box-shadow: 0 0 8px #ff990088; }
+  .powerup-btn:disabled { opacity: 0.3; animation: none; cursor: default; border-color: var(--dim); color: var(--dim); background: transparent; }
+
+  @keyframes pulse-pu {
+    0%,100% { box-shadow: 0 0 4px #ff990044; }
+    50%      { box-shadow: 0 0 12px #ff990088; }
+  }
+
+  .progress-wrap {
+    width: min(720px, 96vw);
+    margin: 0 auto 16px;
+    height: 14px;
+    background: var(--panel);
+    border: 2px solid var(--dim);
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--border), var(--yellow));
+    box-shadow: 0 0 10px var(--border);
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+  }
+
+  .card {
+    width: min(720px, 96vw);
+    margin: 0 auto;
+    border: 2px solid var(--border);
+    background: var(--panel);
+    box-shadow: var(--glow), inset 0 0 40px rgba(0,255,204,0.03);
+    padding: 28px 32px;
+    position: relative;
+    z-index: 1;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .corner { position: absolute; width: 12px; height: 12px; border-color: var(--accent); border-style: solid; }
+  .corner.tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; }
+  .corner.tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; }
+  .corner.bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; }
+  .corner.br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; }
+
+  .category-badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--accent);
+    text-shadow: var(--glow-pink);
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+  }
+
+  .question-text {
+    font-size: 26px;
+    color: #ffffff;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    min-height: 80px;
+  }
+
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  @media (max-width: 500px) {
+    .choices { grid-template-columns: 1fr; }
+    .card { padding: 20px 16px; }
+  }
+
+  .choice-btn {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    padding: 14px 16px;
+    border: 2px solid var(--dim);
+    background: rgba(255,255,255,0.02);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    position: relative;
+    line-height: 1.4;
+  }
+
+  .choice-btn:not(:disabled):hover {
+    border-color: var(--yellow);
+    background: rgba(255,230,0,0.06);
+    color: var(--yellow);
+    transform: translateX(4px);
+  }
+
+  .choice-btn.correct {
+    border-color: var(--correct) !important;
+    background: rgba(0,255,136,0.10) !important;
+    color: var(--correct) !important;
+    animation: pulse-correct 0.4s ease;
+  }
+
+  .choice-btn.wrong {
+    border-color: var(--wrong) !important;
+    background: rgba(255,45,120,0.10) !important;
+    color: var(--wrong) !important;
+    animation: shake 0.35s ease;
+  }
+
+  .choice-btn.eliminated {
+    border-color: #2a2a4a !important;
+    background: rgba(0,0,0,0.3) !important;
+    color: #2a2a4a !important;
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  @keyframes pulse-correct { 0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}60%{transform:translateX(6px)}80%{transform:translateX(-4px)} }
+
+  .choice-btn:disabled { cursor: default; }
+
+  .feedback {
+    margin-top: 20px;
+    padding: 12px 16px;
+    font-size: 24px;
+    text-align: center;
+    min-height: 52px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .feedback.show-correct { border-color: var(--correct); color: var(--correct); text-shadow: 0 0 8px var(--correct); }
+  .feedback.show-wrong   { border-color: var(--wrong);   color: var(--wrong);   text-shadow: 0 0 8px var(--wrong); }
+
+  .next-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    margin-top: 18px;
+    padding: 14px 28px;
+    background: transparent;
+    border: 2px solid var(--border);
+    color: var(--border);
+    cursor: pointer;
+    letter-spacing: 2px;
+    display: block;
+    width: 100%;
+    text-transform: uppercase;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    animation: blink-border 1s step-start infinite;
+  }
+
+  @keyframes blink-border { 50% { border-color: transparent; } }
+  .next-btn:hover { background: var(--border); color: var(--bg); box-shadow: var(--glow); animation: none; }
+
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: block; }
+
+  #start-screen {
+    text-align: center;
+    width: min(680px, 96vw);
+    margin: 20px auto;
+    padding: 36px 32px;
+    border: 2px solid var(--border);
+    background: var(--panel);
+    box-shadow: var(--glow);
+  }
+
+  .insert-coin {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    color: var(--yellow);
+    animation: blink 1.1s step-start infinite;
+    margin: 24px 0 20px;
+    letter-spacing: 2px;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .instructions {
+    color: var(--dim);
+    font-size: 19px;
+    line-height: 1.7;
+    text-align: left;
+    border: 1px solid var(--dim);
+    padding: 16px;
+    margin: 16px 0 24px;
+  }
+
+  .instructions span { color: var(--border); }
+
+  .start-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    padding: 16px 40px;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 0 #8b0037, var(--glow-pink);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .start-btn:hover { transform: translateY(2px); box-shadow: 0 2px 0 #8b0037; }
+
+  #end-screen {
+    text-align: center;
+    width: min(720px, 96vw);
+    margin: 20px auto;
+    padding: 36px 32px;
+    border: 2px solid var(--yellow);
+    background: var(--panel);
+    box-shadow: 0 0 20px var(--yellow), 0 0 60px rgba(255,230,0,0.1);
+  }
+
+  .end-title { font-family: 'Press Start 2P', monospace; font-size: clamp(14px, 3vw, 22px); color: var(--yellow); text-shadow: 0 0 12px var(--yellow); line-height: 1.6; margin-bottom: 16px; }
+  .end-score { font-family: 'Press Start 2P', monospace; font-size: clamp(28px, 6vw, 52px); color: var(--border); text-shadow: var(--glow); margin: 20px 0; }
+  .end-msg   { font-size: 24px; color: var(--text); margin-bottom: 24px; line-height: 1.5; }
+
+  .rank-badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    display: inline-block;
+    padding: 10px 20px;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    margin-bottom: 24px;
+    text-shadow: var(--glow-pink);
+    letter-spacing: 2px;
+  }
+
+  .replay-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    padding: 14px 30px;
+    background: transparent;
+    border: 2px solid var(--border);
+    color: var(--border);
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+
+  .replay-btn:hover { background: var(--border); color: var(--bg); box-shadow: var(--glow); }
+
+  .recap-wrap {
+    margin-top: 28px;
+    text-align: left;
+    border: 2px solid var(--dim);
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .recap-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: var(--border);
+    padding: 10px 14px;
+    background: rgba(0,255,204,0.05);
+    border-bottom: 1px solid var(--dim);
+    letter-spacing: 2px;
+  }
+
+  .recap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 17px;
+  }
+
+  .recap-table th {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--dim);
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--dim);
+    letter-spacing: 1px;
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .recap-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(74,74,138,0.3);
+    vertical-align: top;
+    line-height: 1.4;
+  }
+
+  .recap-table tr.r-correct td { background: rgba(0,255,136,0.04); }
+  .recap-table tr.r-wrong   td { background: rgba(255,45,120,0.04); }
+
+  .recap-icon { font-size: 18px; }
+  .recap-table .term-col { color: var(--border); min-width: 100px; }
+  .recap-table .ans-col  { color: var(--text); max-width: 200px; }
+  .recap-table .cor-col  { color: var(--correct); max-width: 200px; }
+  .recap-table .wrong-col-text { color: var(--wrong); max-width: 200px; }
+
+  footer { margin: 28px auto 20px; width: min(720px, 96vw); text-align: center; position: relative; z-index: 1; }
+
+  .modal-link {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    text-decoration: none;
+    letter-spacing: 2px;
+    border-bottom: 1px solid var(--dim);
+    padding-bottom: 2px;
+    transition: color 0.15s, border-color 0.15s;
+    cursor: pointer;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .modal-link:hover { color: var(--border); border-color: var(--border); }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 10000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+
+  .modal-box {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    box-shadow: var(--glow);
+    max-width: 680px;
+    width: 96vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 36px 32px;
+    position: relative;
+    animation: slideIn 0.25s ease;
+  }
+
+  .modal-title { font-family: 'Press Start 2P', monospace; font-size: 14px; color: var(--border); text-shadow: var(--glow); margin-bottom: 24px; line-height: 1.6; }
+  .modal-body { font-size: 20px; line-height: 1.8; color: var(--text); }
+  .modal-body h3 { font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--yellow); margin: 18px 0 8px; letter-spacing: 2px; }
+
+  .modal-close {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    margin-top: 24px;
+    padding: 12px 24px;
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    cursor: pointer;
+    letter-spacing: 2px;
+    display: block;
+    width: 100%;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--accent); color: #fff; }
+
+  @keyframes streak-pop {
+    0%   { transform: scale(1.4); color: #fff; }
+    100% { transform: scale(1); }
+  }
+  .streak-pop { animation: streak-pop 0.3s ease forwards; display: inline-block; }
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div id="start-screen" class="screen active">
+  <div style="position:relative;z-index:1;">
+    <div class="game-title">SYNTAX<br>BLASTER</div>
+    <div class="subtitle">▸ ICP VOCAB CHALLENGE ◂</div>
+    <div class="creator">BY BRANDON NOBLITT</div>
+    <div class="insert-coin">— INSERT COIN TO PLAY —</div>
+    <div class="instructions">
+      <span>HOW TO PLAY:</span><br><br>
+      ▸ 15 questions from your ICP vocab<br>
+      ▸ Pick the correct definition for each term<br>
+      ▸ Earn +100 pts × streak multiplier<br>
+      ▸ 3 correct in a row = 2× | 5 in a row = 3×<br>
+      ▸ Use your <span>SECOND CHANCE</span> power-up once to remove 2 wrong answers<br>
+      ▸ Score 1500 to unlock the <span>LEGENDARY</span> badge<br>
+    </div>
+    <button class="start-btn" onclick="startGame()">▶ START GAME</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen" class="screen"></div>
+
+<!-- END SCREEN -->
+<div id="end-screen" class="screen">
+  <div class="end-title">GAME OVER</div>
+  <div class="end-score" id="final-score">0</div>
+  <div class="rank-badge" id="rank-badge">RANK: ROOKIE</div>
+  <div class="end-msg" id="end-msg">Keep grinding, coder!</div>
+  <button class="replay-btn" onclick="restartGame()">▶ PLAY AGAIN</button>
+
+  <div class="recap-wrap">
+    <div class="recap-title">▸ ANSWER RECAP</div>
+    <table class="recap-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>TERM</th>
+          <th>YOUR ANSWER</th>
+          <th>CORRECT ANSWER</th>
+        </tr>
+      </thead>
+      <tbody id="recap-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <button class="modal-link" onclick="openModal()">📖 READ HOW I BUILT THIS</button>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+    <div class="modal-title">HOW I BUILT<br>SYNTAX BLASTER</div>
+    <div class="modal-body">
+      <h3>THE IDEA</h3>
+      I needed to create a vocab review game for ICP class using 15 words from our word bank. I wanted it to feel like an actual arcade game, not just a boring quiz.
+
+      <h3>TOOLS USED</h3>
+      I used Claude (claude.ai) as my AI co-creator and VS Code to test the code locally before pushing to GitHub Pages.
+
+      <h3>THE PROCESS</h3>
+      I started with a starter prompt describing the game type, style, and requirements. Then I iteratively refined it — asking for retro arcade aesthetics, sound effects, score tracking, and animated transitions. I used the AI's own "suggest 3 UX feature ideas" prompt to get ideas like the progress bar, pixel-corner decorations, the rank system, a streak multiplier, power-ups, and an answer recap screen.
+
+      <h3>WHAT I LEARNED</h3>
+      Prompting an AI is a skill. Vague prompts get vague results. The more specific I was about visual style, mechanics, and layout, the better the output got. Iterating ("legiterating" 😅) was how the game went from plain to actually fun.
+
+      <h3>TECH STACK</h3>
+      Pure HTML, CSS, and JavaScript — no libraries, no frameworks. Hosted on GitHub Pages. Fonts loaded from Google Fonts. Sound generated with the Web Audio API so no external files needed.
+    </div>
+    <button class="modal-close" onclick="closeModal()">✕ CLOSE</button>
+  </div>
+</div>
+
+<script>
+const vocab = [
+  { term: "Algorithm",       def: "A step-by-step set of instructions for solving a problem.",                       category: "Foundations" },
+  { term: "Boolean",         def: "A data type with only two possible values: true or false.",                       category: "Foundations" },
+  { term: "String",          def: "A sequence of characters used to represent text.",                                category: "Foundations" },
+  { term: "Variable",        def: "A named container in memory that stores a value that can change.",                category: "Storage" },
+  { term: "List",            def: "An ordered collection of values stored under a single variable name.",            category: "Storage" },
+  { term: "Index",           def: "The position number used to access an element in a list, starting at 0.",         category: "Storage" },
+  { term: "Expression",      def: "A combination of values and operators that produces a single result.",            category: "Operators" },
+  { term: "% (Modulus)",     def: "Returns the remainder left over after division.",                                 category: "Operators" },
+  { term: "Concatenation",   def: "Joining two or more strings together into one.",                                  category: "Operators" },
+  { term: "Condition",       def: "A true or false question that controls what code runs.",                          category: "Logic" },
+  { term: "Counter Pattern", def: "Updating a variable by adding to its own current value to count something.",     category: "Logic" },
+  { term: "Function",        def: "A named, reusable block of code that performs a specific task.",                  category: "Functions" },
+  { term: "Function Call",   def: "A command that executes a function.",                                             category: "Functions" },
+  { term: "Event Handler",   def: "Code that waits for a specific event and runs when it occurs.",                  category: "Events" },
+  { term: "Debugging",       def: "The process of finding and fixing errors in code.",                               category: "Best Practices" },
+];
+
+const wrongDefs = [
+  "A graphic drawn on screen using pixel coordinates.",
+  "A loop that runs only while a condition stays false.",
+  "A method that converts numbers into colors.",
+  "A secure container that encrypts stored passwords.",
+  "A tool for measuring the speed of code execution.",
+  "A type of data that represents empty or missing values.",
+  "The visual layout or theme applied to a webpage.",
+  "A command that permanently deletes data from memory.",
+  "A shortcut key combination that triggers a program action.",
+  "A network packet sent between two computers.",
+  "A symbol that marks the end of a line of code.",
+  "A built-in sound player for web browsers.",
+  "The process of uploading code to a server.",
+  "A random number used for security purposes.",
+  "An invisible boundary around a clickable element.",
+];
+
+// ── AUDIO ──
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+let muted = false;
+
+function playTone(freq, type, dur, vol = 0.3) {
+  if (muted) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  gain.gain.setValueAtTime(vol, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  osc.start(); osc.stop(ctx.currentTime + dur);
+}
+
+function playCorrect() {
+  playTone(523,'square',0.08);
+  setTimeout(()=>playTone(659,'square',0.08),90);
+  setTimeout(()=>playTone(784,'square',0.14),180);
+}
+function playWrong() {
+  playTone(220,'sawtooth',0.08,0.25);
+  setTimeout(()=>playTone(180,'sawtooth',0.18,0.25),90);
+}
+function playStart() {
+  [261,329,392,523].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.12),i*80));
+}
+function playEnd() {
+  [523,494,440,392].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.15),i*100));
+}
+function playPowerup() {
+  [400,600,800].forEach((f,i)=>setTimeout(()=>playTone(f,'triangle',0.12,0.25),i*60));
+}
+function playStreak() {
+  playTone(880,'square',0.07,0.2);
+  setTimeout(()=>playTone(1100,'square',0.1,0.15),80);
+}
+
+// ── GAME STATE ──
+let questions = [], currentQ = 0, score = 0;
+let streak = 0, powerupUsed = false;
+let answers = [];
+const TOTAL = 15;
+
+function getMultiplier() {
+  if (streak >= 5) return 3;
+  if (streak >= 3) return 2;
+  return 1;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function buildQuestions() {
+  const pool = shuffle([...vocab]).slice(0, TOTAL);
+  return pool.map(item => {
+    const wrongPool = shuffle([...wrongDefs]).slice(0, 3);
+    const choices = shuffle([item.def, ...wrongPool]);
+    return { ...item, choices, answer: item.def };
+  });
+}
+
+// ── RENDER ──
+function renderGame() {
+  const gs = document.getElementById('game-screen');
+  if (currentQ >= TOTAL) { showEndScreen(); return; }
+
+  const q = questions[currentQ];
+  const pct = (currentQ / TOTAL) * 100;
+  const mult = getMultiplier();
+  const streakDisplay = streak > 0 ? `🔥${streak}x${mult}` : '–';
+  const puLabel = powerupUsed ? '2ND CHANCE: USED' : '⚡ 2ND CHANCE';
+
+  gs.innerHTML = `
+    <header>
+      <div class="game-title" style="font-size:clamp(14px,3vw,24px);">SYNTAX BLASTER</div>
+      <div class="subtitle" style="font-size:16px;">▸ ICP VOCAB CHALLENGE ◂</div>
+      <div class="creator" style="font-size:13px;">BY BRANDON NOBLITT</div>
+    </header>
+
+    <div class="hud">
+      <div class="hud-score">SCORE: <span id="score-display">${score}</span></div>
+      <div class="hud-streak" id="streak-display">${streakDisplay}</div>
+      <div class="hud-q">Q ${currentQ+1} / ${TOTAL}</div>
+      <button class="powerup-btn" id="pu-btn" onclick="usePowerup()" ${powerupUsed ? 'disabled' : ''}>${puLabel}</button>
+      <button class="mute-btn ${muted ? 'muted' : ''}" id="mute-btn" onclick="toggleMute()">${muted ? '🔇 MUTED' : '🔊 SOUND'}</button>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-fill" id="prog" style="width:${pct}%"></div>
+    </div>
+
+    <div class="card" id="q-card">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="category-badge">[ ${q.category.toUpperCase()} ]</div>
+      <div class="question-text">What is a <strong style="color:var(--border)">${q.term}</strong>?</div>
+      <div class="choices" id="choices">
+        ${q.choices.map((c, i) => `
+          <button class="choice-btn" id="cb${i}" onclick="choose(this, ${c === q.answer}, '${c.replace(/'/g,"\\'")}')">
+            ${['A','B','C','D'][i]}. ${c}
+          </button>
+        `).join('')}
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <button class="next-btn" id="next-btn" style="display:none;" onclick="nextQuestion()">
+        ${currentQ + 1 < TOTAL ? '▶ NEXT QUESTION' : '▶ SEE RESULTS'}
+      </button>
+    </div>
+  `;
+
+  setTimeout(() => {
+    const fill = document.getElementById('prog');
+    if (fill) fill.style.width = ((currentQ+1)/TOTAL*100)+'%';
+  }, 50);
+}
+
+function usePowerup() {
+  if (powerupUsed) return;
+  const q = questions[currentQ];
+  const buttons = document.querySelectorAll('.choice-btn');
+  if (!buttons.length) return;
+
+  powerupUsed = true;
+  document.getElementById('pu-btn').disabled = true;
+  document.getElementById('pu-btn').textContent = '2ND CHANCE: USED';
+
+  const wrongBtns = Array.from(buttons).filter(b => {
+    const label = b.textContent.trim().replace(/^[A-D]\.\s*/, '');
+    return label !== q.answer;
+  });
+  shuffle(wrongBtns).slice(0, 2).forEach(b => {
+    b.classList.add('eliminated');
+    b.disabled = true;
+  });
+
+  playPowerup();
+
+  const fb = document.getElementById('feedback');
+  fb.textContent = '⚡ POWER-UP USED! TWO WRONG ANSWERS ELIMINATED.';
+  fb.className = 'feedback show-correct';
+  setTimeout(() => {
+    if (fb.className === 'feedback show-correct' && !document.getElementById('next-btn').style.display.includes('block')) {
+      fb.textContent = '';
+      fb.className = 'feedback';
+    }
+  }, 1800);
+}
+
+function choose(btn, isCorrect, chosenDef) {
+  const q = questions[currentQ];
+  const buttons = document.querySelectorAll('.choice-btn');
+  buttons.forEach(b => b.disabled = true);
+
+  const fb = document.getElementById('feedback');
+  const next = document.getElementById('next-btn');
+  const mult = getMultiplier();
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    const pts = 100 * mult;
+    score += pts;
+    streak++;
+    document.getElementById('score-display').textContent = score;
+
+    let msg = `✓ CORRECT! +${pts} PTS`;
+    if (mult > 1) msg += ` (${mult}× STREAK!)`;
+    fb.textContent = msg;
+    fb.className = 'feedback show-correct';
+    playCorrect();
+
+    if (streak === 3 || streak === 5) {
+      playStreak();
+      const sd = document.getElementById('streak-display');
+      if (sd) { sd.innerHTML = `<span class="streak-pop">🔥${streak}x${getMultiplier()}</span>`; }
+    } else {
+      const sd = document.getElementById('streak-display');
+      if (sd) sd.textContent = `🔥${streak}x${getMultiplier()}`;
+    }
+
+    answers.push({ term: q.term, chosen: chosenDef, correct: q.answer, wasCorrect: true });
+  } else {
+    btn.classList.add('wrong');
+    streak = 0;
+    const sd = document.getElementById('streak-display');
+    if (sd) sd.textContent = '–';
+
+    fb.textContent = '✗ WRONG! TRY TO REMEMBER THIS ONE.';
+    fb.className = 'feedback show-wrong';
+
+    buttons.forEach(b => {
+      if (!b.classList.contains('wrong') && !b.classList.contains('eliminated')) {
+        const label = b.textContent.trim().replace(/^[A-D]\.\s*/, '');
+        if (label === q.answer) b.classList.add('correct');
+      }
+    });
+
+    playWrong();
+    answers.push({ term: q.term, chosen: chosenDef, correct: q.answer, wasCorrect: false });
+  }
+
+  next.style.display = 'block';
+}
+
+function nextQuestion() {
+  currentQ++;
+  renderGame();
+}
+
+function startGame() {
+  ctx.resume();
+  questions = buildQuestions();
+  currentQ = 0; score = 0; streak = 0; powerupUsed = false; answers = [];
+  showScreen('game-screen');
+  renderGame();
+  playStart();
+}
+
+function restartGame() { startGame(); }
+
+function showEndScreen() {
+  showScreen('end-screen');
+  document.getElementById('final-score').textContent = score;
+
+  let rank, msg;
+  if      (score >= 1500) { rank = 'LEGENDARY'; msg = 'Flawless. You ARE the compiler.'; }
+  else if (score >= 1200) { rank = 'MASTER';    msg = 'Outstanding work, coder!'; }
+  else if (score >= 900)  { rank = 'EXPERT';    msg = 'Solid knowledge — keep it up!'; }
+  else if (score >= 600)  { rank = 'CODER';     msg = 'Not bad. Review the missed ones!'; }
+  else                    { rank = 'ROOKIE';    msg = "Keep grinding — you'll get there!"; }
+
+  document.getElementById('rank-badge').textContent = `RANK: ${rank}`;
+  document.getElementById('end-msg').textContent = msg;
+
+  const tbody = document.getElementById('recap-body');
+  tbody.innerHTML = answers.map(a => `
+    <tr class="${a.wasCorrect ? 'r-correct' : 'r-wrong'}">
+      <td class="recap-icon">${a.wasCorrect ? '✓' : '✗'}</td>
+      <td class="term-col">${a.term}</td>
+      <td class="${a.wasCorrect ? 'cor-col' : 'wrong-col-text'}">${a.chosen}</td>
+      <td class="cor-col">${a.correct}</td>
+    </tr>
+  `).join('');
+
+  playEnd();
+}
+
+function toggleMute() {
+  muted = !muted;
+  const btn = document.getElementById('mute-btn');
+  if (btn) {
+    btn.textContent = muted ? '🔇 MUTED' : '🔊 SOUND';
+    btn.className = `mute-btn ${muted ? 'muted' : ''}`;
+  }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function openModal()  { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModalOutside(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+</script>
+</body>
+</html>
